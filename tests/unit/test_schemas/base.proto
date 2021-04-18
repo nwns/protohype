@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package ex.protos;
+
+message Base {
+  bool field = 1;
+}

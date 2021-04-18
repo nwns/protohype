@@ -9,6 +9,7 @@ from hypothesis import strategies as st
 from .test_schemas import im_pb2
 from .test_schemas import loop_pb2
 from .test_schemas import sfixed_pb2
+from .test_schemas import ext_pb2
 
 from hypothesis import given
 
@@ -69,3 +70,12 @@ def test_sfixed_values_are_in_range(sfixed):
     """
     assert -(1 << 31) <= sfixed.sfixed32 <= (1 << 31) - 1
     assert -(1 << 63) <= sfixed.sfixed64 <= (1 << 63) - 1
+
+
+# @given(modules_to_strategies(ext_pb2)[ext_pb2.Ext])
+# def test_imported_modules(ext_example):
+#     """
+#     Ensure that when modules are imported from other modules that 
+#     they are correctly handled
+#     """
+#     assert ext_example

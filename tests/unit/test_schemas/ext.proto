@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package ex.protos;
+
+import "base.proto";
+
+message Ext {
+  Base base = 1;
+}

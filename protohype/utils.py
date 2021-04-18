@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from hypothesis import strategies as st
 
 
-__all__ = ('full_field_name', 'optional')
+__all__ = ("full_field_name", "optional")
 
 
 def get_field(proto_cls, field_name):

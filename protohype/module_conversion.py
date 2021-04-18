@@ -6,11 +6,12 @@ from functools import partial
 
 from hypothesis import strategies as st
 
-# from google.protobuf.internal.well_known_types import FieldDescriptor
 from google.protobuf.descriptor import FieldDescriptor
-# from google.protobuf.descriptor_pool import DescriptorPool
 
-SINGLEPRECISION = dict(max_value=(2 - 2 ** -23) * 2 ** 127, min_value=-(2 - 2 ** -23) * 2 ** 127)
+
+SINGLEPRECISION = dict(
+    max_value=(2 - 2 ** -23) * 2 ** 127, min_value=-(2 - 2 ** -23) * 2 ** 127
+)
 RANGE32 = dict(max_value=2 ** 31 - 1, min_value=-(2 ** 31) + 1)
 RANGE64 = dict(max_value=2 ** 63 - 1, min_value=-(2 ** 63) + 1)
 URANGE32 = dict(min_value=0, max_value=2 ** 32 - 1)
@@ -31,13 +32,15 @@ SCALAR_MAPPINGS = {
     FieldDescriptor.TYPE_SFIXED64: st.integers(**RANGE64),
     FieldDescriptor.TYPE_BOOL: st.booleans(),
     FieldDescriptor.TYPE_STRING: st.text(),
-    FieldDescriptor.TYPE_BYTES: st.binary()
+    FieldDescriptor.TYPE_BYTES: st.binary(),
 }
 
 LABEL_MAPPINGS = {
-    FieldDescriptor.LABEL_OPTIONAL: partial(st.one_of, st.none()),  # N.B. NoneType is not a valid proto value, but is handled in buildable
+    FieldDescriptor.LABEL_OPTIONAL: partial(
+        st.one_of, st.none()
+    ),  # N.B. NoneType is not a valid proto value, but is handled in buildable
     FieldDescriptor.LABEL_REPEATED: st.lists,
-    FieldDescriptor.LABEL_REQUIRED: lambda x: x
+    FieldDescriptor.LABEL_REQUIRED: lambda x: x,
 }
 
 
@@ -50,13 +53,14 @@ def overridable(f):
     strategies. In the latter case, the override will be passed the originally
     generated strategy from the decorated function.
     """
+
     def wrapper(*args, **kwargs):
-        overrides = kwargs.get('overrides')
+        overrides = kwargs.get("overrides")
         if not overrides:
             return f(*args)
 
         field = args[0]
-        field_name = getattr(field, 'DESCRIPTOR', field).full_name
+        field_name = getattr(field, "DESCRIPTOR", field).full_name
 
         overridden_strategy = overrides.get(field_name)
         if not overridden_strategy:
@@ -66,16 +70,14 @@ def overridable(f):
             return overridden_strategy
 
         return overridden_strategy(f(*args))
+
     return wrapper
 
 
 @overridable
 def enum_to_strategy(enum):
     """Generate strategy for enum."""
-    return st.sampled_from([
-        value.number
-        for value in enum.DESCRIPTOR.values
-    ])
+    return st.sampled_from([value.number for value in enum.DESCRIPTOR.values])
 
 
 def find_strategy_in_env(descriptor, env):
@@ -99,15 +101,11 @@ def non_null(x):
 def field_to_strategy(field, env):
     """Generate strategy for field."""
     if SCALAR_MAPPINGS.get(field.type) is not None:
-        return apply_modifier(
-            strategy=SCALAR_MAPPINGS[field.type],
-            field=field
-        )
+        return apply_modifier(strategy=SCALAR_MAPPINGS[field.type], field=field)
 
     if field.type is FieldDescriptor.TYPE_ENUM:
         return apply_modifier(
-            strategy=find_strategy_in_env(field.enum_type, env),
-            field=field
+            strategy=find_strategy_in_env(field.enum_type, env), field=field
         )
 
     if field.type is FieldDescriptor.TYPE_MESSAGE:
@@ -120,12 +118,11 @@ def field_to_strategy(field, env):
             k, v = field.message_type.fields
             return st.dictionaries(
                 field_to_strategy(k, env).filter(non_null),
-                field_to_strategy(v, env).filter(non_null)
+                field_to_strategy(v, env).filter(non_null),
             )
 
         return apply_modifier(
-            strategy=find_strategy_in_env(field.message_type, env),
-            field=field
+            strategy=find_strategy_in_env(field.message_type, env), field=field
         )
 
     raise Exception("Unhandled field {}.".format(field))
@@ -133,12 +130,16 @@ def field_to_strategy(field, env):
 
 def buildable(message_obj):
     """Return a "buildable" callable for st.builds which will handle optionals."""
+
     def builder(**kwargs):
-        return message_obj(**{
-            k: v
-            for k, v in kwargs.items()
-            if v is not None  # filter out unpopulated optional param
-        })
+        return message_obj(
+            **{
+                k: v
+                for k, v in kwargs.items()
+                if v is not None  # filter out unpopulated optional param
+            }
+        )
+
     builder.__name__ = message_obj.DESCRIPTOR.full_name
     return builder
 
@@ -147,13 +148,16 @@ def message_to_strategy(message_obj, env, overrides=None):
     """Generate strategy from message."""
     # Protobuf messages may have recursive dependencies.
     # We can manage these by lazily constructing strategies using st.deferred
-    return st.deferred(lambda: st.builds(
-        buildable(message_obj),
-        **{
-            field_name: field_to_strategy(field, env, overrides=overrides)
-            for field_name, field in message_obj.DESCRIPTOR.fields_by_name.items()
-        })
+    return st.deferred(
+        lambda: st.builds(
+            buildable(message_obj),
+            **{
+                field_name: field_to_strategy(field, env, overrides=overrides)
+                for field_name, field in message_obj.DESCRIPTOR.fields_by_name.items()
+            }
+        )
     )
+
 
 def handle_message_type(all_mess_objs, all_enum_objs, cont_obj, cont_type):
 
@@ -162,22 +166,30 @@ def handle_message_type(all_mess_objs, all_enum_objs, cont_obj, cont_type):
 
     all_mess_objs.append(cont_obj)
     all_nested = cont_type.nested_types
-    for cur_nested in all_nested:		
-        handle_message_type(all_mess_objs, all_enum_objs, getattr(cont_obj, cur_nested.name), cur_nested)
+    for cur_nested in all_nested:
+        handle_message_type(
+            all_mess_objs, all_enum_objs, getattr(cont_obj, cur_nested.name), cur_nested
+        )
+
 
 def load_module_into_env(module_, env, overrides=None):
     """Populate env with all messages and enums from the module."""
     message_objects = []
     nested_enum_objects = []
     for cur_type in module_.DESCRIPTOR.message_types_by_name.values():
-        handle_message_type(message_objects, nested_enum_objects, getattr(module_, cur_type.name), cur_type)
-        
+        handle_message_type(
+            message_objects,
+            nested_enum_objects,
+            getattr(module_, cur_type.name),
+            cur_type,
+        )
+
     for enum_obj in nested_enum_objects:
         env[enum_obj] = enum_to_strategy(enum_obj, overrides=overrides)
     for enum in module_.DESCRIPTOR.enum_types_by_name.values():
         enum_obj = getattr(module_, enum.name)
         env[enum_obj] = enum_to_strategy(enum_obj, overrides=overrides)
-    
+
     for message_obj in message_objects:
         env[message_obj] = message_to_strategy(message_obj, env, overrides=overrides)
 
@@ -198,7 +210,10 @@ def modules_to_strategies(*modules, **overrides):
         for module_ in modules_to_load:
             if module_.DESCRIPTOR.package in loaded_packages:
                 continue
-            if not all(dependency.package in loaded_packages for dependency in module_.DESCRIPTOR.dependencies):
+            if not all(
+                dependency.package in loaded_packages
+                for dependency in module_.DESCRIPTOR.dependencies
+            ):
                 continue
             load_module_into_env(module_, env, overrides)
             loaded_packages.add(module_.DESCRIPTOR.package)

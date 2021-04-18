@@ -1,20 +1,25 @@
-# hypothesis-protobuf
+# protohype
+
 [![Build Status](https://travis-ci.org/hchasestevens/hypothesis-protobuf.svg?branch=master)](https://travis-ci.org/hchasestevens/hypothesis-protobuf)
 [![PyPI version](https://badge.fury.io/py/hypothesis-pb.svg)](https://pypi.org/project/hypothesis-pb)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hypothesis-pb.svg) 
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hypothesis-pb.svg)
 
-[Hypothesis](http://hypothesis.works/) extension to allow generating [protobuf](https://developers.google.com/protocol-buffers/) messages matching a schema.
+[Hypothesis](http://hypothesis.works/) extension to allow generating [protobuf](https://developers.google.com/protocol-buffers/) messages matching a schema. Note that this is a fork of the no longer maintained `hypothesis-protobuf` library and contains a number of bug fixes and extensions compated to the original - apart from the better name.
 
 ## Installation
+
 ```
-pip install hypothesis-pb
+pip install protohype
 ```
 
 ## Usage
-Given a compiled protobuf schema module, `hypothesis-protobuf` allows for hypothesis strategies to be generated which match the types of the protobuf messages.
+
+Given a compiled protobuf schema module, `protohype` allows for hypothesis strategies to be generated which match the types of the protobuf messages.
 
 ### Simple example
+
 Using an example protobuf schema for an instant messaging application:
+
 ```proto
 syntax = "proto3";
 package im;
@@ -41,15 +46,19 @@ message InstantMessage {
   repeated bytes image_attachments = 7;
 }
 ```
+
 a strategy for `InstantMessage` can be generated from the compiled schema (`im_pb2.py`) by executing:
+
 ```python
-from hypothesis_protobuf import modules_to_strategies
+from protohype import modules_to_strategies
 import im_pb2
 
 protobuf_strategies = modules_to_strategies(im_pb2)
 instant_message_strategy = protobuf_strategies[im_pb2.InstantMessage]
 ```
+
 which in turn can be used to generate `InstantMessage` examples:
+
 ```python
 >>> instant_message_strategy.example()
 timestamp: 14420265017158477352
@@ -69,7 +78,9 @@ image_attachments: "\256\376ZP-"
 image_attachments: "\340"
 
 ```
+
 or as a strategy for use in testing (see the [hypothesis quick-start guide](https://hypothesis.readthedocs.io/en/latest/quickstart.html)):
+
 ```python
 from hypothesis import given
 
@@ -79,24 +90,28 @@ def test_instant_message_processor(instant_message):
 ```
 
 ### Overriding strategies
+
 When generating strategies for a given protobuf module, field-specific overrides can be provided. These overrides must be mappings from full field names to strategies, like so:
+
 ```python
-from hypothesis_protobuf import modules_to_strategies
+from protohype import modules_to_strategies
 from hypothesis import strategies as st
 import im_pb2
 
 strategy_overrides = {
     'im.InstantMessage.timestamp': st.floats(
-        min_value=0, 
+        min_value=0,
         max_value=2e9
     )
 }
 protobuf_strategies = modules_to_strategies(im_pb2, **strategy_overrides)
 instant_message_strategy = protobuf_strategies[im_pb2.InstantMessage]
 ```
-`hypothesis-protobuf` also offers a `full_field_name` utility, allowing the above override to be specified as:
+
+`protohype` also offers a `full_field_name` utility, allowing the above override to be specified as:
+
 ```python
-from hypothesis_protobuf import full_field_name
+from protohype import full_field_name
 from hypothesis import strategies as st
 import im_pb2
 
@@ -107,7 +122,9 @@ strategy_overrides = {
     )
 }
 ```
+
 In cases where the message strategy should choose either from the override provided or from the default field value, the `optional` function can be used:
+
 ```python
 from hypothesis_protobuf import optional
 from hypothesis import strategies as st
@@ -118,7 +135,9 @@ strategy_overrides = {
     )
 }
 ```
+
 Finally, overrides can also be provided as functions, taking the field's default strategy and returning a new strategy. Using this method, the above can be rewritten as:
+
 ```python
 strategy_overrides = {
     'im.InstantMessage.timestamp': (
@@ -128,4 +147,5 @@ strategy_overrides = {
 ```
 
 ## License
-`hypothesis-protobuf` is available under the MIT license.
+
+`protohype` is available under the MIT license.

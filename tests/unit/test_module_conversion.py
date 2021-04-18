@@ -5,6 +5,7 @@ from __future__ import absolute_import, unicode_literals
 from numbers import Number
 
 from past.builtins import basestring
+
 from hypothesis import strategies as st
 
 from .test_schemas import im_pb2
@@ -13,8 +14,8 @@ from .test_schemas import sfixed_pb2
 
 from hypothesis import given
 
-from hypothesis_protobuf.module_conversion import modules_to_strategies
-from hypothesis_protobuf.utils import full_field_name
+from protohype.module_conversion import modules_to_strategies
+from protohype.utils import full_field_name
 
 
 def test_instant_message_example():

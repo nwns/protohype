@@ -6,8 +6,9 @@ from functools import partial
 
 from hypothesis import strategies as st
 
-from google.protobuf.internal.well_known_types import FieldDescriptor
-
+# from google.protobuf.internal.well_known_types import FieldDescriptor
+from google.protobuf.descriptor import FieldDescriptor
+# from google.protobuf.descriptor_pool import DescriptorPool
 
 SINGLEPRECISION = dict(max_value=(2 - 2 ** -23) * 2 ** 127, min_value=-(2 - 2 ** -23) * 2 ** 127)
 RANGE32 = dict(max_value=2 ** 31 - 1, min_value=-(2 ** 31) + 1)

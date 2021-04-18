@@ -4,8 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 from numbers import Number
 
-from past.builtins import basestring
-
 from hypothesis import strategies as st
 
 from .test_schemas import im_pb2
@@ -18,49 +16,49 @@ from protohype.module_conversion import modules_to_strategies
 from protohype.utils import full_field_name
 
 
-def test_instant_message_example():
-    """Ensure InstantMessage can be made into a strategy with the correct types."""
-    protobuf_strategies = modules_to_strategies(im_pb2)
-    instant_message_strategy = protobuf_strategies[im_pb2.InstantMessage]
-    instant_message_example = instant_message_strategy.example()
+@given(modules_to_strategies(im_pb2)[im_pb2.InstantMessage])
+def test_instant_message(instant_message_example):
     assert isinstance(instant_message_example.timestamp, Number)
-    assert isinstance(instant_message_example.sender.screen_name, basestring)
-    assert isinstance(instant_message_example.recipient.screen_name, basestring)
-    assert isinstance(instant_message_example.message, basestring)
+    assert isinstance(instant_message_example.sender.screen_name, str)
+    assert isinstance(instant_message_example.recipient.screen_name, str)
+    assert isinstance(instant_message_example.message, str)
     assert isinstance(instant_message_example.metadata.latency, float)
     assert isinstance(instant_message_example.metadata.inner.a, float)
     assert isinstance(
-        instant_message_example.metadata.inner.layer.client.name, basestring
+        instant_message_example.metadata.inner.layer.client.name, str
     )
     assert isinstance(instant_message_example.metadata.inner.layer.status, Number)
     assert isinstance(instant_message_example.client, Number)
 
 
-def test_overrides_respected():
+test_im_strategy = modules_to_strategies(
+    im_pb2,
+    **{full_field_name(im_pb2.InstantMessage, "message"): st.just("test message")}
+)
+@given(test_im_strategy[im_pb2.InstantMessage])
+def test_overrides_respected(instant_message_example):
     """Ensure provided overrides are respected."""
-    protobuf_strategies = modules_to_strategies(
-        im_pb2,
-        **{full_field_name(im_pb2.InstantMessage, "message"): st.just("test message")}
-    )
-    instant_message_strategy = protobuf_strategies[im_pb2.InstantMessage]
-    instant_message_example = instant_message_strategy.example()
     assert instant_message_example.message == "test message"
 
 
-def test_nested_strategies_produce_data():
+@given(modules_to_strategies(im_pb2)[im_pb2.MetaData.Inner])
+def test_nested_strategies_produce_data(im_example):
     """Ensure nested messages are accessible within strategy dict."""
-    protobuf_strategies = modules_to_strategies(im_pb2)
-    assert protobuf_strategies[im_pb2.MetaData.Inner].example()
-    assert protobuf_strategies[im_pb2.MetaData.Inner.LimboDreamLayer].example()
+    assert im_example
+
+@given(modules_to_strategies(im_pb2)[im_pb2.MetaData.Inner.LimboDreamLayer])
+def test_nested_strategies_produce_data(im_example):
+    """Ensure twice nested messages are accessible within strategy dict."""
+    assert im_example
 
 
-def test_recursive_strategies_produce_data():
+@given(modules_to_strategies(loop_pb2)[loop_pb2.Loop])
+def test_recursive_strategies_produce_data(loop_example):
     """
     Ensure that we are able to construct strategies for recursive
     messages
     """
-    protobuf_strategies = modules_to_strategies(loop_pb2)
-    assert protobuf_strategies[loop_pb2.Loop].example()
+    assert loop_example
 
 
 @given(modules_to_strategies(sfixed_pb2)[sfixed_pb2.Sfixed])

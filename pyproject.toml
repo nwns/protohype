@@ -11,7 +11,7 @@ readme = "README.md"
 packages = [{ include = "protohype" }]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 hypothesis = "^6.61.0"
 protobuf = "^4.21.12"
 

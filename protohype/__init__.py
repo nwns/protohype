@@ -6,3 +6,4 @@ from protohype.module_conversion import modules_to_strategies
 from protohype.utils import full_field_name, optional
 
 __all__ = ("modules_to_strategies", "full_field_name", "optional")
+__version__ = "0.0.0"

@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "cleargrid-protohype"
+version = "1.4.0"
+description = "Hypothesis extension to allow generating protobuf messages matching a schema."
+authors = [
+    "Nicholas Martin <nicholas.martin@tharsus.co.uk>",
+    "Nigel Whillier <nigel@nosun.ca>",
+]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "cleargrid_protohype" }]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+hypothesis = "^6.61.0"
+protobuf = "^4.21.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.semantic_release]
+major_on_zero = false
+version_variable = ["protohype/__init__.py:__version__"]
+version_toml = ["pyproject.toml:tool.poetry.version"]
+version_source = "tag_only"
+
+[tool.black]
+line-length = 79
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 79
